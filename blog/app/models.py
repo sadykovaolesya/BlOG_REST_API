@@ -12,6 +12,9 @@ class Post(models.Model):
     def __str_(self):
         return self.title
 
+    class Meta:
+        ordering = ['time_create']
+
 class Subscribe(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="author_post")
     subscriber = models.ForeignKey(User, on_delete=models.CASCADE, related_name="subscriber")
