@@ -7,7 +7,7 @@ class Post(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name="author")
     time_create = models.DateTimeField(auto_now_add=True)
     time_update = models.DateTimeField(auto_now=True)
-    read_users = models.ManyToManyField(User, related_name="post", blank=True, null= True)
+    read_users = models.ManyToManyField(User, related_name="post", blank=True)
 
     def __str_(self):
         return self.title
