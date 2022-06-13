@@ -51,9 +51,9 @@ class PostSubscribeDetailViews(generics.RetrieveUpdateAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
-        subscribe = Subscribe.objects.filter(subscriber=self.request.user)
+        subscribe = Subscribe.objects.select_related().filter(subscriber=self.request.user)
         author = [subscribe.author for subscribe in subscribe]
-        post = Post.objects.filter(author__username__in=author)
+        post = Post.objects.select_related().filter(author__username__in=author).prefetch_related('read_users')
         return post
 
 
@@ -69,12 +69,13 @@ class PostSubscribeListViews(generics.ListAPIView):
         cache_key = "post__sub_users_%s" % user.id
         post = cache.get(cache_key)
         if not post:
-            subscribe = Subscribe.objects.filter(subscriber=user)
+            subscribe = Subscribe.objects.select_related().filter(subscriber=user)
             author = [subscribe.author for subscribe in subscribe]
-            post = Post.objects.filter(author__username__in=author)
+            post = Post.objects.select_related().filter(author__username__in=author).prefetch_related('read_users')
             cache.set(
                 cache_key, post,
-                timeout=CACHE_TTL 
+                timeout=CACHE_TTL
+                
             )
         return post
 
