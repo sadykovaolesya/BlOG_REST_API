@@ -1,3 +1,7 @@
+from unittest import case, result
+from django.core.cache import cache
+from django.conf import settings
+from django.core.cache.backends.base import DEFAULT_TIMEOUT
 from django.contrib.auth.models import User
 from django.db.models import Count
 from django_filters.rest_framework import DjangoFilterBackend
@@ -12,16 +16,33 @@ from .serializers import (AuthorSerializer, PostSerializer,
                           PostSubscribeSerializer, SubscribeSerializer)
 from .service import AuthorFilter, PostIsReadFilter, PostSubscribePagination
 
+ 
+CACHE_TTL = getattr(settings, 'CACHE_TTL', DEFAULT_TIMEOUT)
+
 
 class PostAPIViews(generics.ListCreateAPIView):
     serializer_class = PostSerializer
     permission_classes = [IsAuthenticatedOrReadOnly]
 
     def get_queryset(self):
-        if self.request.auth:
-            post = Post.objects.exclude(author=self.request.user)
+        if self.request.auth:     
+            cache_key = "post_users_%s" % self.request.user.id
+            post = cache.get(cache_key)
+            if not post:
+                post = Post.objects.exclude(author=self.request.user)
+                cache.set(
+                cache_key, post,
+                timeout=CACHE_TTL 
+            )
         else:
-            post = Post.objects.all()
+            cache_key = "post_users"
+            post = cache.get(cache_key)
+            if not post:
+                post = Post.objects.all()
+                cache.set(
+                cache_key, post,
+                timeout=CACHE_TTL 
+            )            
         return post
 
 
@@ -45,9 +66,16 @@ class PostSubscribeListViews(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        subscribe = Subscribe.objects.filter(subscriber=user)
-        author = [subscribe.author for subscribe in subscribe]
-        post = Post.objects.filter(author__username__in=author)
+        cache_key = "post__sub_users_%s" % user.id
+        post = cache.get(cache_key)
+        if not post:
+            subscribe = Subscribe.objects.filter(subscriber=user)
+            author = [subscribe.author for subscribe in subscribe]
+            post = Post.objects.filter(author__username__in=author)
+            cache.set(
+                cache_key, post,
+                timeout=CACHE_TTL 
+            )
         return post
 
 
@@ -59,7 +87,13 @@ class UserListViews(generics.ListCreateAPIView):
     filterset_class = AuthorFilter
 
     def get_queryset(self):
-        authors = User.objects.annotate(count_post=Count("post"))
+        authors = cache.get('authors')
+        if not authors:
+            authors = User.objects.annotate(count_post=Count("post"))
+            cache.set(
+                'authors', authors, 
+                 timeout=CACHE_TTL
+            )
         return authors
 
 
