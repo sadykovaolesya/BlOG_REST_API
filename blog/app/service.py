@@ -10,6 +10,8 @@ class PostSubscribePagination(PageNumberPagination):
 
 
 class AuthorFilter(filters.FilterSet):
+    """Filter by the number of posts"""
+
     count_post = filters.NumberFilter(field_name="count_post")
 
     o = filters.OrderingFilter(
@@ -25,6 +27,8 @@ class AuthorFilter(filters.FilterSet):
 
 
 class PostIsReadFilter(filters.FilterSet):
+    """Filter by status read or not"""
+
     is_read = filters.BooleanFilter(field_name="is_read", method="get_read_status")
 
     def get_read_status(self, queryset, field_name, value):
