@@ -1,4 +1,3 @@
-from unittest import case, result
 from django.core.cache import cache
 from django.conf import settings
 from django.core.cache.backends.base import DEFAULT_TIMEOUT
@@ -66,17 +65,9 @@ class PostSubscribeListViews(generics.ListAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        cache_key = "post__sub_users_%s" % user.id
-        post = cache.get(cache_key)
-        if not post:
-            subscribe = Subscribe.objects.select_related().filter(subscriber=user)
-            author = [subscribe.author for subscribe in subscribe]
-            post = Post.objects.select_related().filter(author__username__in=author).prefetch_related('read_users')
-            cache.set(
-                cache_key, post,
-                timeout=CACHE_TTL
-                
-            )
+        subscribe = Subscribe.objects.select_related().filter(subscriber=user)
+        author = [subscribe.author for subscribe in subscribe]
+        post = Post.objects.select_related().filter(author__username__in=author).prefetch_related('read_users')
         return post
 
 
