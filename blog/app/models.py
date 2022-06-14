@@ -12,9 +12,6 @@ class Post(models.Model):
     time_update = models.DateTimeField(auto_now=True)
     read_users = models.ManyToManyField(User, related_name="read", blank=True)
 
-    def get_read_status(self, request):
-        return request.user in self.read_users.all()
-
     def __str__(self):
         return self.title
 
@@ -32,3 +29,8 @@ class Subscribe(models.Model):
 
     class Meta:
         unique_together = ["author", "subscriber"]
+
+    def __str__(self):
+        return f"author = {self.author} subscriber = {self.subscriber}"
+
+    
