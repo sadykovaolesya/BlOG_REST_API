@@ -28,9 +28,10 @@ class PostSubscribeSerializer(serializers.ModelSerializer):
     def to_representation(self, instance):
         """is_read field added"""
         representation = super().to_representation(instance)
-        representation["is_read"] = (
-            self.context["request"].user in instance.read_users.all()
-        )
+        if self.context.get("request", None):
+            representation["is_read"] = (
+                self.context["request"].user in instance.read_users.all()
+            )
         return representation
 
     def to_internal_value(self, data):
@@ -76,6 +77,7 @@ class SubscribeSerializer(serializers.ModelSerializer):
     """Serializes subscribe"""
 
     subscriber = serializers.HiddenField(default=serializers.CurrentUserDefault())
+    author = serializers.SlugRelatedField(slug_field="username", read_only=True)
 
     class Meta:
         model = Subscribe
